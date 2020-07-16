@@ -45,7 +45,7 @@ function App() {
     
     <div className="App">
       <div className="instructions">
-        <h3>Optimization with Genetic Algorithm</h3>
+        <h3>Word Searching with Genetic Algorithm</h3>
         <p>
           Starting from an initial "population" of randomly generated strings (of equal length to target 
           word), the algorithm searches for the target word by repeatedly generating new populations that 
