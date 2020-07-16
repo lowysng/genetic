@@ -1,1 +1,3 @@
-# genetic-js
+# genetic
+
+https://lowysng.github.io/genetic
