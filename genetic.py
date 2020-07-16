@@ -60,7 +60,7 @@ class Agent:
 
     def get_successors(self, state):
         successors = []
-        int_encoding = [self.letter_to_int(letter) for letter in self.initial_state]
+        int_encoding = [self.letter_to_int(letter) for letter in state]
         for i in range(len(int_encoding)):
             for j in range(MIN, MAX):
                 if int_encoding[i] != j:
@@ -70,9 +70,9 @@ class Agent:
         return successors
 
     def fitness(self, state):
-        state_encoding = [self.letter_to_int(s) for s in state]
+        int_encoding = [self.letter_to_int(s) for s in state]
         fitness_score = 0
-        for idx, e in enumerate(state_encoding):
+        for idx, e in enumerate(int_encoding):
             fitness_score += abs(self.goal_state_encoding[idx] - e)
         return fitness_score
 
@@ -91,7 +91,7 @@ class Node:
         self.value = value
 
 def genetic_algorithm(population, fitness):
-    num_letters = 25
+    num_letters = MAX - MIN
     size_of_individual = len(population[0])
     step = 0
     step_limit = 500
@@ -148,7 +148,7 @@ def genetic_algorithm(population, fitness):
     return solution, step, population_history
 
 # user = input("\n\nEnter word: ")
-user = 'grace low?'
+user = 'lowys'
 
 agent = Agent()
 agent.set_goal(list(user))
