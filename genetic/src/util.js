@@ -85,7 +85,7 @@ export class Agent {
 }
 
 export class Node {
-    constructor(state, parent_one, parent_two, parent_split_point, is_mutated, value) {
+    constructor(state, parent_one, parent_two, parent_split_point, is_mutated, value, generation, mutation_point) {
         this.id = uuid()
         this.state = state
         this.parent_one = parent_one
@@ -93,6 +93,8 @@ export class Node {
         this.parent_split_point = parent_split_point
         this.is_mutated = is_mutated
         this.value = value
+        this.generation = generation
+        this.mutation_point = mutation_point
     }
 }
 
@@ -123,7 +125,8 @@ export const genetic_algorithm = (population, fitness, step_limit=10) => {
         const parent_state_two = parent_nodes[1].state; 
         const split_point = Math.floor(Math.random() * parent_state_one.length);
         const child_state = parent_state_one.slice(0,split_point).concat(parent_state_two.slice(split_point));
-        return new Node(child_state, parent_nodes[0], parent_nodes[1], split_point, false, fitness(child_state))
+        const parent_generation = parent_nodes[0].generation;
+        return new Node(child_state, parent_nodes[0], parent_nodes[1], split_point, false, fitness(child_state), parent_generation + 1, -1)
     }
 
     const mutate = node => {
@@ -131,20 +134,28 @@ export const genetic_algorithm = (population, fitness, step_limit=10) => {
         const random_int = Math.floor(Math.random() * node_state.length);
         const random_letter = alphabet[Math.ceil(Math.random() * alphabet_max)];
         node_state[random_int] = random_letter
-        return new Node(node_state, node.parent_one, node.parent_two, node.parent_split_point, true, fitness(node_state))
+        return new Node(
+            node_state, 
+            node.parent_one, 
+            node.parent_two, 
+            node.parent_split_point, 
+            true, 
+            fitness(node_state), 
+            node.generation,
+            random_int)
     }
 
 
     let step = 0;
     const mutation_epsilon = 0.1;
 
-    let population_nodes = population.map(p => new Node(p, null, null, null, false, fitness(p)));
+    let population_nodes = population.map(p => new Node(p, null, null, null, false, fitness(p), 1, -1));
     let population_fitness = population_nodes.map(p => p.value);
     const population_history = [population_nodes];
 
     while (!population_fitness.includes(0) && (step < step_limit)) {
 
-        if (step % 1 === 0) console.log(`Generation ${step} --> ${population_nodes[0].state} (${population_nodes[0].value})`);
+        // if (step % 1 === 0) console.log(`Generation ${step} --> ${population_nodes[0].state} (${population_nodes[0].value})`);
 
         let next_population_nodes = []
 
@@ -165,8 +176,9 @@ export const genetic_algorithm = (population, fitness, step_limit=10) => {
         step += 1;
     }
 
-    population_nodes.sort((a, b) => a.value - b.value)
-    const solution_node = population_nodes[0]
+    const copy = [...population_nodes]
+    copy.sort((a, b) => a.value - b.value)
+    const solution_node = copy[0]
 
     return {
         solution: solution_node,

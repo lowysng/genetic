@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { Agent, genetic_algorithm, get_ancestors } from './util';
+import HighlightNode from './HighlightNode';
+import FitnessMatrix from './FitnessMatrix';
 import './App.css';
 
 function App() {
 
+  const CHAR_LIMIT = 12;
 
   const [input, setInput] = useState('');
   const [agentReady, setAgentReady] = useState(false);
   const [agentGoal, setAgentGoal] = useState('');
   const [solution, setSolution] = useState(null);
   const [history, setHistory] = useState(null);
+  const [currentHighlightNode, setCurrentHighlightNode] = useState(null);
 
   const handleChange = event => setInput(event.target.value);
 
@@ -20,35 +24,41 @@ function App() {
     setInput('');
     setSolution(null);
     setHistory(null);
-    console.log(input);
   }
 
   const runGenetic = e => {
     const agent = new Agent();
     agent.set_goal(agentGoal);
-    console.log(agent.goal_state)
     const initial_population = agent.get_successors(agent.initial_state);
     const { solution, step, history } = genetic_algorithm(initial_population, agent.fitness, 100);
     setSolution(solution);
+    setCurrentHighlightNode(solution);
     setHistory(history);
+  }
+
+  const highlightNode = (id, node_generation) => {
+    const node = history[node_generation - 1].find(node => node.id === id);
+    setCurrentHighlightNode(node);
   }
 
   return (
     
     <div className="App">
-      <h3>Searching for Words using a Genetic Algorithm</h3>
-      <p>
-        Starting from an initial "population" of randomly generated strings (of equal length to target 
-        word), the algorithm searches for the target word by repeatedly generating new populations that 
-        are increasingly fit with time. A string is fit if it is similar to the target word in terms of 
-        the sum of the distances of the corresponding letters, according to the alphabet. For instance, 
-        <i> a</i> is more similar to <i>c</i> than it is to <i>z</i>. 
-      </p>
-      <br/>
-      <b>Algorithm.</b>
-      <p>
-        Repeat for <i>k</i> generations, or until the target word is found. Steps for producing each 
-        population generation: 
+      <div className="instructions">
+        <h3>Optimization with Genetic Algorithm</h3>
+        <p>
+          Starting from an initial "population" of randomly generated strings (of equal length to target 
+          word), the algorithm searches for the target word by repeatedly generating new populations that 
+          are increasingly fit with time. A string is fit if it is similar to the target word in terms of 
+          the sum of the distances of the corresponding letters, according to the alphabet. For instance, 
+          <i> a</i> is more similar to <i>c</i> than it is to <i>z</i>. 
+        </p>
+        <br/>
+        <b>Algorithm.</b>
+        <p>
+          Repeat for <i>k</i> generations, or until the target word is found. Steps for producing each 
+          population generation: 
+        </p>
         <ol>
           <li>
             Randomly select two individuals from the current generation, weighted by their fitness (fitter 
@@ -63,56 +73,74 @@ function App() {
             one symbol of the child with another randomly selected symbol. 
           </li>
           <li>
-            Add child to the current generation pool. Repeat steps 1 - 3 until population count reaches a 
-            reasonable number. 
+            Add child to the current generation pool. Repeat steps 1 - 3 until new population count reaches 
+            the previous population count.
           </li>
         </ol>
-      </p>
-      <br/>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Target word (max 12 chars, chars allowed: <code>aZ., -?!</code>): 
-          <input type="text" value={input} pattern="[A-Za-z .,!?-]*" onChange={handleChange} maxLength="12"/>
-        </label>
-        <input type="submit" value="Submit"/>
-      </form>
+        <br/>
+        <form onSubmit={handleSubmit}>
+          <label>
+            Target word (max {CHAR_LIMIT} chars, chars allowed: <code>aZ., -?!</code>): 
+            <input type="text" value={input} pattern="[A-Za-z .,!?-]*" onChange={handleChange} maxLength={CHAR_LIMIT}/>
+          </label>
+          <input type="submit" value="Submit"/>
+        </form>
+      </div>
+
       {agentReady && 
       <>
         <br/>
         <p>Agent ready (Goal: <code>{agentGoal}</code>)</p>
         <button onClick={runGenetic}>Run genetic algorithm</button>
+        <br />
       </>}
+
       {solution && history &&  
-        <div>
-          <br/>
-          <p><u>Results:</u></p>
-          <p>{`Best fit solution found in generation ${history.length} (fitness score: ${solution.value})`}</p>
-          <p>{`Immediate parents: ${solution.parent_one.state.join('')} and ${solution.parent_two.state.join('')} (with mutation: ${solution.is_mutated})`}</p>
-          <br/>
-          <p><u>Genetic history</u></p>
-          <table>
-            <tr>
-              <th>Generation count</th>
-              <th>Generation elite (fitness score)</th>
-              <th>Parent 1</th>
-              <th>Parent 2</th>
-              <th>Mutated</th>
-            </tr>
-            {history.map((gen, idx) => {
-              const gen_copy = [...gen];
-              gen_copy.sort((a, b) => a.value - b.value);
-              const elite = gen_copy[0];
-              return (
+        <div className="results">
+          <div>
+            <b>
+            <p>{`Best fit solution found in generation ${history.length} (fitness score: ${solution.value})`}</p>
+            <p>{`Immediate parents: [${solution.parent_one.state.join('')}] and [${solution.parent_two.state.join('')}] (with mutation: ${solution.is_mutated})`}</p>
+            </b>
+            <br/>
+            <h3>Genetic history</h3>
+            <i>Click on table entry to show more information.</i>
+            <table>
+              <thead>
                 <tr>
-                  <th>{idx + 1}</th>
-                  <th>{`${elite.state.join('')} (${elite.value})`}</th>
-                  <th>{idx !== 0 ? `${elite.parent_one.state.join('')} (${elite.parent_one.value})` : 'None' }</th>
-                  <th>{idx !== 0 ? `${elite.parent_two.state.join('')} (${elite.parent_two.value})` : 'None' }</th>
-                  <th>{`${elite.is_mutated}`}</th>
+                  <th>Generation count</th>
+                  <th>Generation elite (fitness score)</th>
+                  <th>Parent 1</th>
+                  <th>Parent 2</th>
+                  <th>Mutated</th>
                 </tr>
-              )
-            })}
-          </table>
+              </thead>
+              <tbody>
+                {history.map((gen, idx) => {
+                  const gen_copy = [...gen];
+                  gen_copy.sort((a, b) => a.value - b.value);
+                  const elite = gen_copy[0];
+                  return (
+                    <tr key={idx}>
+                      <th>{idx + 1}</th>
+                      <th onClick={() => highlightNode(elite.id, elite.generation)}>{`${elite.state.join('')} (${elite.value})`}</th>
+                      {idx !== 0 ? 
+                        <th onClick={() => highlightNode(elite.parent_one.id, elite.parent_one.generation)}>{`${elite.parent_one.state.join('')} (${elite.parent_one.value})`}</th> : 
+                        <th>{`None`}</th>}
+                      {idx !== 0 ? 
+                        <th onClick={() => highlightNode(elite.parent_two.id, elite.parent_two.generation)}>{`${elite.parent_two.state.join('')} (${elite.parent_two.value})`}</th> : 
+                        <th>{`None`}</th>}
+                      <th>{`${elite.is_mutated}`}</th>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="highlight">
+            <HighlightNode node={currentHighlightNode} />
+            <FitnessMatrix history={history} currentHighlightNode={currentHighlightNode} updateHighlightNode={highlightNode}/>
+          </div>
         </div>}
     </div>
   );

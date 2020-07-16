@@ -8,11 +8,32 @@ body {
 	margin: 10px 50px;
 }
 
+.instructions {
+	max-width: 1000px;
+}
+
 table, th, td {
 	border: 1px solid black;
 	border-collapse: collapse;
 }
 
 th, td {
+	cursor: pointer;
 	padding: 1px 5px;
+}
+
+.results {
+	display: flex;
+}
+
+.highlight {
+	margin-left: 100px;
+}
+
+.fitness-matrix {
+	margin-top: 20px;
+}
+
+.fitness-matrix .node {
+	cursor: pointer;
 }
